@@ -1,0 +1,101 @@
+Customer_ID,Age,Annual_Income,Gender,City,Education,Spending_Score
+1,36,62662,Female,C,Bachelor,58
+2,37,73067,Male,B,Master,71
+3,22,32454,Female,A,Diploma,59
+4,53,118148,Male,B,Master,72
+5,41,70965,Male,A,Master,96
+6,22,30056,Female,B,ITE,22
+7,26,38110,Female,C,Diploma,43
+8,24,47412,Female,C,Diploma,55
+9,28,36910,Male,A,Diploma,43
+10,36,116090,Female,A,Master,78
+11,39,61518,Male,A,Bachelor,75
+12,31,47868,Male,B,Diploma,48
+13,36,116560,Male,B,Master,89
+14,23,26757,Female,A,ITE,24
+15,31,46374,Female,C,Bachelor,62
+16,23,31668,Male,B,ITE,26
+17,35,67890,Male,B,Bachelor,71
+18,57,103585,Female,B,Master,79
+19,22,29789,Male,A,Secondary School,34
+20,29,42693,Female,A,Bachelor,77
+21,23,35173,Male,A,ITE,30
+22,55,70230,Female,A,Master,97
+23,33,63776,Male,A,Bachelor,50
+24,18,21306,Female,C,Secondary School,39
+25,18,30867,Male,C,Secondary School,22
+26,30,39474,Female,A,Diploma,36
+27,27,35530,Female,B,Diploma,38
+28,24,38545,Male,A,ITE,31
+29,32,74766,Male,C,Bachelor,76
+30,30,70303,Female,C,Bachelor,73
+31,30,48237,Male,B,Diploma,46
+32,34,57675,Female,C,Bachelor,79
+33,31,63938,Male,A,Bachelor,66
+34,22,23696,Female,B,Secondary School,33
+35,22,47082,Female,A,Diploma,46
+36,31,97505,Female,A,Master,97
+37,27,30854,Female,B,Diploma,34
+38,30,115680,Female,A,Master,88
+39,23,25249,Female,C,Secondary School,30
+40,29,30791,Male,A,ITE,25
+41,31,44931,Male,B,Bachelor,72
+42,20,31447,Male,B,Secondary School,36
+43,25,65342,Female,B,Bachelor,55
+44,27,33004,Female,A,ITE,39
+45,21,25197,Female,B,ITE,41
+46,20,31774,Female,B,Secondary School,25
+47,20,36464,Male,A,ITE,47
+48,56,104357,Male,C,Master,85
+49,22,25659,Female,A,ITE,47
+50,35,46546,Male,B,Bachelor,75
+51,27,70206,Male,B,Bachelor,68
+52,28,42911,Female,A,Bachelor,56
+53,28,48680,Male,C,Bachelor,50
+54,37,65759,Female,B,Master,76
+55,23,41111,Male,B,Diploma,30
+56,20,28155,Female,B,Secondary School,34
+57,33,61918,Female,A,Bachelor,79
+58,29,38922,Female,B,ITE,26
+59,36,71065,Female,C,Bachelor,65
+60,28,36835,Male,B,ITE,36
+61,21,30423,Female,B,ITE,49
+62,36,60932,Female,C,Bachelor,54
+63,56,67158,Female,B,Master,78
+64,28,28170,Male,A,ITE,38
+65,22,29499,Female,A,ITE,43
+66,30,52183,Male,A,Bachelor,69
+67,20,30539,Female,C,ITE,25
+68,27,37115,Male,B,ITE,49
+69,27,42557,Male,A,Bachelor,74
+70,27,42200,Female,C,Bachelor,78
+71,19,34207,Male,B,Secondary School,23
+72,47,71969,Female,C,Master,91
+73,32,110108,Female,A,Master,78
+74,23,33352,Female,A,ITE,23
+75,30,113645,Male,A,Master,90
+76,23,34719,Male,C,ITE,27
+77,24,21218,Female,C,Secondary School,26
+78,25,44555,Female,A,Bachelor,76
+79,27,59830,Male,C,Bachelor,71
+80,38,54373,Female,A,Bachelor,55
+81,42,68754,Female,A,Master,91
+82,20,34362,Female,B,Secondary School,11
+83,50,114045,Male,C,Master,70
+84,57,99790,Male,A,Master,70
+85,22,31259,Male,A,Secondary School,38
+86,20,27683,Female,C,Secondary School,12
+87,18,27679,Female,B,Secondary School,26
+88,21,29435,Female,B,Secondary School,39
+89,37,57453,Male,A,Bachelor,70
+90,27,44434,Female,C,Diploma,57
+91,30,31060,Female,B,Diploma,53
+92,22,34832,Female,C,Secondary School,23
+93,26,46990,Female,C,Diploma,32
+94,33,30190,Male,A,Diploma,58
+95,22,22975,Male,B,Secondary School,32
+96,22,49711,Female,A,Diploma,32
+97,47,94584,Male,B,Master,79
+98,25,25569,Male,B,ITE,22
+99,27,27733,Female,B,ITE,43
+100,19,27455,Female,B,Secondary School,24
