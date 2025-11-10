@@ -17,7 +17,7 @@ sns.scatterplot(x='x_col', y='y_col', hue='category', style='category', size='si
 sns.lineplot(x='x_col', y='y_col', hue='category', style='category', ci=95, data=df)
 
 # Figure-level relational plot (scatter/line) with facets
-sns.relplot(x='x_col', y='y_col', hue='category', kind='scatter', col='col_facet', row='row_facet', data=df)
+sns.relplot(x='x_col', y='y_col', hue='category', kind='scatter', col='col_facet', row='row_facet', data=df) # kind = 'line'
 
 ################################################################################
 ############################### 2. Distribution Plots ##########################
@@ -72,6 +72,7 @@ sns.clustermap(df.corr(), method='ward', metric='euclidean', standard_scale=1, c
 ################################################################################
 # Axes-level regression plot
 sns.regplot(x='x_col', y='y_col', data=df, ci=95, scatter_kws={'s':50}, line_kws={'color':'red'})
+#  YO THIS IS SO GOOD, IS A SCATTER PLOT WITH A BEST FIT LINE!!!
 
 # Figure-level regression plot with facets
 sns.lmplot(x='x_col', y='y_col', hue='category', col='col_facet', row='row_facet', data=df, ci=95)
