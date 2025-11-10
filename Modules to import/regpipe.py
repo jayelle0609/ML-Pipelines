@@ -25,7 +25,7 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, I
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
-
+#############################################################################
 numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
 categorical_cols = df.select_dtypes(include='object').columns.tolist()
 ordinal_cols = []
@@ -41,6 +41,19 @@ iso = IsolationForest(contamination=0.05, random_state=42)
 iso.fit(df[numeric_cols])
 mask = iso.predict(df[numeric_cols]) != -1
 df['is_outlier'] = ~mask  # True = outlier, False = inlier
+####################################################### VIZ 0 : out lier bar plots with no annotate############################################
+df['is_outlier'].value_counts().plot(kind='bar') 
+ ############################################ VIZ 0 : out lier bar plots with annotate############################################
+ax = df['is_outlier'].value_counts().plot(kind='bar', color=['blue', 'orange'])
+# Annotate values directly on the bars
+for i, v in enumerate(df['is_outlier'].value_counts()):
+    ax.text(i, v + 1, str(v), ha='center', fontsize=12, color='black')
+# Display the plot
+plt.title('Outlier Distribution')
+plt.xlabel('Outlier (True/False)')
+plt.ylabel('Count')
+plt.show()
+#################################################################################################
 # Viz 1 - outlier
 plt.figure(figsize=(8,6))
 plt.scatter(df[numeric_cols[0]], df[numeric_cols[1]],
@@ -49,8 +62,10 @@ plt.xlabel(numeric_cols[0])
 plt.ylabel(numeric_cols[1])
 plt.title('Outliers detected by Isolation Forest')
 plt.show()
+#############################################################################
 ## Viz 2 - outlier 
-sns.pairplot(df, vars=numeric_cols, hue='is_outlier', palette={False:'blue', True:'red'})
+sns.pairplot(df, vars=numeric_cols, hue='is_outlier', palette={False:'blue', True:'red'}, corner = True) # masks repeating graphs
+#############################################################################
 # Viz 3 - outlier
 df['anomaly_score'] = iso.decision_function(df[numeric_cols]) # shows u outlier anomaly score, higher = worser anomaly
 plt.figure(figsize=(8,4))
@@ -61,22 +76,39 @@ plt.ylabel('Frequency')
 plt.title('Distribution of Isolation Forest Scores')
 plt.legend()
 plt.show()
+#############################################################################
 # Viz 4 - PCA outliers + labels of anomaly score 
 pca = PCA(n_components=2)
 pca_result = pca.fit_transform(df[numeric_cols])
 # Store the first 2 principal components
 df['PC1'] = pca_result[:, 0]
 df['PC2'] = pca_result[:, 1]
-plt.figure(figsize=(8,6))
-plt.scatter(df['PC1'], df['PC2'], c=df['is_outlier'], cmap='coolwarm', edgecolor='k')
-# Get anomaly scores from Isolation Forest. # Labellig anomaly score on diag
-outliers = df[df['is_outlier']]
+# Create the figure and axis
+fig, ax = plt.subplots(figsize=(8, 6))
+# Plotting
+scatter = ax.scatter(df['PC1'], df['PC2'], c=df['is_outlier'], cmap='coolwarm', edgecolor='k')
+ax.set_xlabel('PC1')
+ax.set_ylabel('PC2')
+ax.set_title('Isolation Forest Outliers in PCA Space')
+# Label outliers with their anomaly scores
+outliers = df[df['is_outlier']]  # Filtering the outliers
 for _, row in outliers.iterrows():
-    plt.text(row['PC1'], row['PC2'], f"{row['anomaly_score']:.2f}", fontsize=8, color='red')
-plt.xlabel('PC1')
-plt.ylabel('PC2')
-plt.title('Isolation Forest Outliers in PCA space')
+    ax.text(
+        row['PC1'], row['PC2']+0.2, f"{row['anomaly_score']:.2f}", fontsize=10, color='red', ha='center', va='center'
+    )
+# Add color legend for outliers
+ax.legend(*scatter.legend_elements(), title="Outliers")
+# Adding annotation text below the plot (on the canvas, not on the axes)
+annotation_text = (
+    "Low anomaly scores (closer to -1) indicate outliers or anomalies.\n"
+    "High anomaly scores (closer to 1) indicate inliers or normal points"
+)
+# Add the annotation text **below the entire plot**
+fig.text(0.5, -0.04, annotation_text, ha='center', fontsize=10, color='black', va='center', wrap=True)
+# Show the plot
+plt.tight_layout()  # Ensures everything fits nicely
 plt.show()
+#############################################################################
 # Viz 5 - 3D view of outliers
 # Run 3D PCA
 pca = PCA(n_components=3)
@@ -99,8 +131,10 @@ fig.show()
 # mask = iso.predict(df[numeric_cols]) != -1
 # df['is_outlier'] = ~mask  # True = outlier, False = inlier
 df_clean = df[mask].reset_index(drop=True)
-X = df_clean.drop(columns='y') # drop target col
-y = df_clean['target']
+##########################################################################
+df = df_clean.drop(columns= ['is_outlier', 'anomaly_score', 'PC1', 'PC2', 'PC3'])
+X = df.drop(columns='y') # drop target col
+y = df['target']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # -------------------------------
@@ -108,8 +142,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # -------------------------------
 # Note not to feed y into pipeline. 
 # y should not be scaled 
-numeric_cols = df.select_dtypes(include=np.number).columns.tolist() # or X
-categorical_cols = df.select_dtypes(exclude=np.number).columns.tolist() # or X
+numeric_cols = X.select_dtypes(include=np.number).columns.tolist() # or X
+categorical_cols = X.select_dtypes(exclude=np.number).columns.tolist() # or X
  
 ordinal_cols = ['education']
 education_order = ['low', 'medium', 'high']
@@ -196,21 +230,21 @@ for name, model in models.items():
     # CV MAE
     mae_scores = cross_val_score(pipeline, X_train, y_train, cv = kf, scoring='neg_mean_absolute_error', n_jobs=-1)
     # CV R²
-    r2_scores = cross_val_score(pipeline, X_sample, y_sample, cv=kf, scoring='r2', n_jobs=-1)
+    r2_scores = cross_val_score(pipeline, X_train, y_train, cv=kf, scoring='r2', n_jobs=-1)
     
     # Append results for this model
     cv_results.append({
         'Model': name,
-        'RMSE Mean': rmse_scores.mean(),
         'R2 Mean': r2_scores.mean(),
-        'MAE Mean' : mae_scores.mean()
-        'RMSE Std': rmse_scores.std(),
+        'RMSE Mean': rmse_scores.mean(),
+        'MAE Mean' : mae_scores.mean(),
         'R2 Std': r2_scores.std(),
+        'RMSE Std': rmse_scores.std(),
         'MAE Std' : mae_scores.std()
     })
 
 # Create DataFrame and sort
-cv_df = pd.DataFrame(cv_results).sort_values(by='RMSE Mean')
+cv_df = pd.DataFrame(cv_results).sort_values(by='R2 Mean', ascending = False)
 print("Initial CV Results on Sample:\n", cv_df)
 
 # Select best model based on RMSE and R2
