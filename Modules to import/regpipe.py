@@ -26,6 +26,9 @@ from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 
+# convert bool cols to numeric
+# Map boolean to 0/1
+data['is_student'] = data['is_student'].astype(int)
 numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
 categorical_cols = df.select_dtypes(include='object').columns.tolist()
 ordinal_cols = []
