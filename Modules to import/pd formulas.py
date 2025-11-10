@@ -31,12 +31,15 @@ df.sort_index()
 
 df['income'].fillna(0)
 
-df.pivot(index='id', 
-         columns='month', 
-         values='sales') # reshape from long to wide
+df.pivot(index='id', # old
+         columns='month', # old
+         values='sales') # reshape from long to wide #old
 
-df.melt(id_vars='id', 
-        value_vars=['Jan','Feb']) # reshape from wide to long
+# reshape from wide to long
+df.melt(id_vars='id', # old 
+        value_vars=['Jan','Feb'], # unique col values, from old bring ot new
+        var_name = 'month', # unique col name, new
+        value_name = 'sales') # name of next new col to show values,
 
 df.pivot_table(index='dept', 
                values='salary', 
