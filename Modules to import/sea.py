@@ -56,6 +56,15 @@ cols_of_interest = ['sex', 'smoker',	'day',	'time',	 'size']
 for cols in cols_of_interest:
   sns.countplot(tips, x=cols, hue = 'time')
 
+cols = df.select_dtypes(include=np.number).columns
+fig, axes = plt.subplots(2, 2, figsize=(10,8))  # 2 rows, 2 columns
+axes = axes.flatten()  # Flatten to easily iterate
+for ax, col in zip(axes, cols[:4]):  # Only first 4 numerical columns
+    sns.histplot(data=tips, x=col, kde=True, ax=ax)
+    ax.set_title(f"Distribution of {col}")
+plt.tight_layout()
+plt.show()
+
 # Box plot
 sns.boxplot(x='category', y='value', hue='sub_category', orient='v', notch=False, data=df)
 
