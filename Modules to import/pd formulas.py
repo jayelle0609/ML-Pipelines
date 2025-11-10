@@ -13,7 +13,7 @@ pd.merge(left = left_df, right = right_df,
 # Used to stack/append multiple DataFrames vertically or horizontally
 # -------------------------------
 pd.concat(objs=[df1, df2, ...],   # list of DataFrames
-          axis=0,                 # 0 = stack rows, 1 = stack columns
+          axis=0,                 # 0 = stack rows, 1 = stack columns 
           join='outer',           # 'outer'=union of columns, 'inner'=intersection
           ignore_index=False,     # reset index if True
          )
