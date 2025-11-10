@@ -56,15 +56,17 @@ cols_of_interest = ['sex', 'smoker',	'day',	'time',	 'size']
 for cols in cols_of_interest:
   sns.countplot(tips, x=cols, hue = 'time')
 
+##################################### 2 x 2 plot ##########################################################
 cols = df.select_dtypes(include=np.number).columns
 fig, axes = plt.subplots(2, 2, figsize=(10,8))  # 2 rows, 2 columns
 axes = axes.flatten()  # Flatten to easily iterate
 for ax, col in zip(axes, cols[:4]):  # Only first 4 numerical columns
-    sns.histplot(data=tips, x=col, kde=True, ax=ax)
+    sns.regplot(data=tips, x=col, y='tip', ci=95, scatter_kws={'s':50}, line_kws={'color':'red'}, ax=ax)
     ax.set_title(f"Distribution of {col}")
 plt.tight_layout()
 plt.show()
 
+##################################### 2 x 2 plot ##########################################################
 # Box plot
 sns.boxplot(x='category', y='value', hue='sub_category', orient='v', notch=False, data=df)
 
@@ -109,11 +111,35 @@ sns.regplot(x='x_col', y='y_col', data=df, ci=95, scatter_kws={'s':50}, line_kws
 #  YO THIS IS SO GOOD, IS A SCATTER PLOT WITH A BEST FIT LINE!!!
 
 # Figure-level regression plot with facets
+# line plot with ci
 sns.lmplot(x='x_col', y='y_col', hue='category', col='col_facet', row='row_facet', data=df, ci=95)
 
 # Residual plot
+# To visualize the residuals — differences between observed values and the values predicted by a regression model.
 sns.residplot(x='x_col', y='y_col', lowess=True, data=df)
 
+##################################
+
+sns.residplot(data=tips, x='total_bill', y='tip',
+              lowess=True,  # add a smooth trend line
+              scatter_kws={'color':'blue', 'alpha':0.6},
+              line_kws={'color':'red'})
+plt.title("Residual Plot of Tip vs Total Bill")
+plt.show()
+
+##################################
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+residuals = y_actual - y_pred
+
+sns.scatterplot(x=y_pred, y=residuals)
+plt.axhline(0, color='red', linestyle='--')
+plt.xlabel("Predicted Values")
+plt.ylabel("Residuals")
+plt.title("Custom Residual Plot")
+plt.show()
 ################################################################################
 ############################### 6. Pair / Joint Plots ##########################
 ################################################################################
