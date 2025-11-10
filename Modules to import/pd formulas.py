@@ -15,7 +15,7 @@ pd.merge(left = left_df, right = right_df,
 pd.concat(objs=[df1, df2, ...],   # list of DataFrames
           axis=0,                 # 0 = stack rows, 1 = stack columns 
           join='outer',           # 'outer'=union of columns, 'inner'=intersection
-          ignore_index=False,     # reset index if True
+          ignore_index=True,     # repeated index if False
          )
 
 df.append(other=df2, ignore_index=True) # append df2 rows to df
