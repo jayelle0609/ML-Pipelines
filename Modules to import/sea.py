@@ -25,6 +25,13 @@ sns.relplot(x='x_col', y='y_col', hue='category', kind='scatter', col='col_facet
 # Histogram
 sns.histplot(x='col', bins=10, hue='category', multiple='stack', kde=True, data=df)
 
+# Looping thru numeric cols to check for distribution type
+for cols in df.select_dtypes(include = np.number).columns:
+  plt.figure(figsize = (3,3))
+  sns.histplot(data = tips, x = cols, kde = True)
+  plt.title(f"Distribution of {cols}")
+
+
 # Kernel Density Estimate
 sns.kdeplot(x='col', y=None, hue='category', fill=True, bw_adjust=1, data=df)
 
