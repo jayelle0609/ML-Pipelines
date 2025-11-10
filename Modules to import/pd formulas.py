@@ -1,6 +1,7 @@
 import pandas as pd 
+import numpy as np
 
-
+df.dropna(how='all', axis = 0, inplace=True) # 0 means drop cols, 1 means drop rows 
 # -------------------------------
 # Used to combine two DataFrames based on keys/columns, similar to SQL joins
 # -------------------------------
