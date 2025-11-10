@@ -26,12 +26,6 @@ from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 
-# convert bool cols to numeric
-# Map boolean to 0/1
-df['smoker'].value_counts() # check only 2 values to map
-data['is_male'] = data['sex'].map({Male: 1, Female: 0})
-data['smoker'] = data['sex'].map({Yes: 1, No: 0})
-
 numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
 categorical_cols = df.select_dtypes(include='object').columns.tolist()
 ordinal_cols = []
