@@ -26,24 +26,36 @@ sns.relplot(x='x_col', y='y_col', hue='category', kind='scatter', col='col_facet
 sns.histplot(x='col', bins=10, hue='category', multiple='stack', kde=True, data=df)
 
 # Looping thru numeric cols to check for distribution type
+# NUMERIC PLOTS NUMERIC NUMERIC NUMERIC NUMERIC
 for cols in df.select_dtypes(include = np.number).columns:
   plt.figure(figsize = (3,3))
-  sns.histplot(data = tips, x = cols, kde = True)
+  sns.histplot(data = df, x = cols, kde = True, hue = 'col category of itnerests') # OR
+  sns.displot(x='col', hue='category', kind='hist', col='col_facet', row='row_facet', data=df) # KINDA BETTER
   plt.title(f"Distribution of {cols}")
-
 
 # Kernel Density Estimate
 sns.kdeplot(x='col', y=None, hue='category', fill=True, bw_adjust=1, data=df)
 
-# Rug plot (individual observations)
+# Rug plot (individual observations)]
+# not very helpful
 sns.rugplot(x='col', height=0.05, data=df)
 
 # Figure-level histogram/kde
+# YO VERY GOOD!!!
 sns.displot(x='col', hue='category', kind='hist', col='col_facet', row='row_facet', data=df)
 
 ################################################################################
 ############################### 3. Categorical Plots ###########################
 ################################################################################
+sub_cat = df['col2']
+for cols in df.select_dtypes(exclude = np.number):
+  plt.figure(figsize = (3,3))
+  sns.countplot(x= cols, hue = sub_cat, data = df)
+
+cols_of_interest = ['sex', 'smoker',	'day',	'time',	 'size']
+for cols in cols_of_interest:
+  sns.countplot(tips, x=cols, hue = 'time')
+
 # Box plot
 sns.boxplot(x='category', y='value', hue='sub_category', orient='v', notch=False, data=df)
 
@@ -70,6 +82,12 @@ sns.catplot(x='category', y='value', hue='sub_category', kind='box', col='col_fa
 ################################################################################
 # Heatmap (e.g., correlation matrix)
 sns.heatmap(df.corr(), annot=True, fmt='.2f', cmap='coolwarm', linewidths=0.5)
+
+# Create a mask for the upper triangle
+mask = np.triu(np.ones_like(tips.select_dtypes(include = np.number).corr()))
+sns.heatmap(data = tips.select_dtypes(include = np.number).corr(), annot = True, fmt = '.2f', cmap = 'coolwarm', mask = mask)
+plt.title("Correlation Heatmap (lower triangle only)")
+plt.show()
 
 # Clustermap (hierarchical clustering)
 sns.clustermap(df.corr(), method='ward', metric='euclidean', standard_scale=1, cmap='viridis')
