@@ -25,6 +25,18 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, I
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
+
+######### if got na before eda #######
+df.info()
+df.isnull().sum()
+num_cols = df.select_dtypes(include = np.number)
+num_cols.fillna(num_cols.mean(), inplace=True)
+cat_cols = df.select_dtypes(exclude = np.number)
+cat_cols.fillna(cat_cols.mode().iloc[0], inplace=True)
+# combine 
+df = pd.concat([num_cols, cat_cols], axis=1)
+df.info()
+
 ############################################################################# EDA Categorical Distributions, Countplot #####################################################################################
 categorical_cols = df.select_dtypes(exclude=np.number).columns.tolist()
 
@@ -136,6 +148,66 @@ plt.tight_layout()
 plt.show()
 
 ################################################### EDA Corr Heatmap #######################################################################################
+################################################## Numerical rs with scatter and line plot and 95 ci ##########################################################
+# Select numeric columns
+num_cols = df.select_dtypes(include=np.number).columns.tolist()
+
+# Create 2x2 grid
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+axes = axes.flatten()  # flatten to iterate easily
+
+# Loop through numerical columns
+for i, col in enumerate(num_cols[:4]):  # only first 4 numeric columns to fit 2x2
+    ax = axes[i]
+    # Scatter + regression line
+    sns.regplot(
+        x=col,
+        y='body_mass_g',  # example target for regression
+        data=df,
+        ax=ax,
+        ci=95,            # 95% confidence interval
+        scatter_kws={'alpha':0.6},  # transparency for scatter points
+        line_kws={'color':'red'}
+    )
+    ax.set_title(f'{col} vs body_mass_g', fontsize=12, fontweight='bold')
+
+# Hide empty axes if fewer than 4 numeric cols
+for j in range(i+1, len(axes)):
+    axes[j].axis('off')
+
+plt.tight_layout()
+plt.show()
+################################################## Numerical rs with scatter and line plot and 95 ci #########################################################
+################################################## Box plot to detect outliers in num cols #########################################################
+# Select numeric columns
+num_cols = df.select_dtypes(include=np.number).columns.tolist()
+
+# Determine layout (2x2 grid here as example)
+n_cols = 2
+n_rows = int(np.ceil(len(num_cols)/n_cols))
+
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, n_rows*4))
+axes = axes.flatten()  # flatten for easy iteration
+
+# Loop through numeric columns
+for i, col in enumerate(num_cols):
+    ax = axes[i]
+    sns.boxplot(x=df[col], ax=ax, color='skyblue')
+    ax.set_title(f'Boxplot of {col}', fontsize=12, fontweight='bold')
+
+# Hide empty axes if any
+for j in range(i+1, len(axes)):
+    axes[j].axis('off')
+
+plt.tight_layout()
+plt.show()
+
+numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+categorical_cols = df.select_dtypes(include='object').columns.tolist()
+ordinal_cols = []
+ordered_categories = []
+################################################## Box plot to detect outliers in num cols #########################################################
+
 numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
 categorical_cols = df.select_dtypes(include='object').columns.tolist()
 ordinal_cols = []
@@ -243,9 +315,9 @@ fig.show()
 # iso.fit(df[numeric_cols])
 # mask = iso.predict(df[numeric_cols]) != -1
 # df['is_outlier'] = ~mask  # True = outlier, False = inlier
-df_clean = df[mask].reset_index(drop=True)
+df = df[mask].reset_index(drop=True)
 ##########################################################################
-df = df_clean.drop(columns= ['is_outlier', 'anomaly_score', 'PC1', 'PC2', 'PC3'])
+df = df.drop(columns= ['is_outlier', 'anomaly_score', 'PC1', 'PC2', 'PC3'])
 X = df.drop(columns='y') # drop target col
 y = df['target']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
