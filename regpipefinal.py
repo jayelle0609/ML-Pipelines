@@ -667,26 +667,24 @@ except Exception as e:
 # ---------------------------
 # Full Pipeline: Baseline vs Optuna for Random Forest
 # ---------------------------
+# ---------------------------
+# Full Pipeline: Baseline vs Optuna (Version-Safe RMSE)
+# ---------------------------
 
 # 1️⃣ Imports
 import optuna
-import matplotlib.pyplot as plt
-from sklearn.datasets import load_boston
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+# !pip install optuna
 from sklearn.metrics import r2_score, mean_squared_error
 
-# 2️⃣ Load dataset
-X, y = load_boston(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# 3️⃣ Baseline model
+# 3️⃣ Baseline Random Forest
 rf_default = RandomForestRegressor(random_state=42)
 rf_default.fit(X_train, y_train)
 y_pred_default = rf_default.predict(X_test)
 
 r2_default = r2_score(y_test, y_pred_default)
-rmse_default = mean_squared_error(y_test, y_pred_default, squared=False)
+rmse_default = np.sqrt(mean_squared_error(y_test, y_pred_default))
 print(f"Baseline RF: R² = {r2_default:.3f}, RMSE = {rmse_default:.3f}")
 
 # 4️⃣ Optuna objective function
@@ -707,7 +705,7 @@ def objective(trial):
     y_pred = model.predict(X_test)
     return r2_score(y_test, y_pred)  # maximize R²
 
-# 5️⃣ Create and run Optuna study
+# 5️⃣ Run Optuna study
 study = optuna.create_study(direction='maximize')
 study.optimize(objective, n_trials=50)
 
@@ -718,10 +716,10 @@ rf_optuna.fit(X_train, y_train)
 y_pred_optuna = rf_optuna.predict(X_test)
 
 r2_optuna = r2_score(y_test, y_pred_optuna)
-rmse_optuna = mean_squared_error(y_test, y_pred_optuna, squared=False)
+rmse_optuna = np.sqrt(mean_squared_error(y_test, y_pred_optuna))
 print(f"Optuna RF: R² = {r2_optuna:.3f}, RMSE = {rmse_optuna:.3f}")
 
-# 7️⃣ Visualize comparison
+# 7️⃣ Visualize baseline vs Optuna
 models = ['Baseline', 'Optuna']
 r2_scores = [r2_default, r2_optuna]
 rmse_scores = [rmse_default, rmse_optuna]
@@ -742,13 +740,14 @@ ax[1].set_ylabel("RMSE")
 plt.suptitle("Baseline vs Optuna Hyperparameter Tuning")
 plt.show()
 
-# 8️⃣ Optional: Visualize Optuna optimization history
+# 8️⃣ Optional: Optuna optimization history
 try:
     import optuna.visualization as vis
     fig_optuna = vis.plot_optimization_history(study)
     fig_optuna.show()
 except:
     print("Plotly not installed, skipping Optuna visualization")
+
 
 ############## to check if default model or optuna best parms is better##########################################################
 ############## to check if default model or optuna best parms is better##########################################################
