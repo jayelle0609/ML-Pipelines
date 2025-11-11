@@ -178,6 +178,29 @@ for j in range(i+1, len(axes)):
 plt.tight_layout()
 plt.show()
 ################################################## Numerical rs with scatter and line plot and 95 ci #########################################################
+### scatter + line + hue of a specific class type#################
+num_cols = df.select_dtypes(include=np.number).columns.tolist()
+fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+axes = axes.flatten()
+
+class = df['class'].unique() # select a class (penguin type 1, 2 ,3 )
+colors = sns.color_palette('Set1', n_colors=len(class))
+
+for i, col in enumerate(num_cols[:4]):
+    ax = axes[i]
+    for clazz, color in zip(class, colors):
+        class_data = df[df['class'] == clazz]
+        sns.scatterplot(x=col, y='body_mass_g', data=class_data, ax=ax, color=color, label=clazz, alpha=0.6) # replace with one of the cols of interest
+        sns.regplot(x=col, y='body_mass_g', data=class_data, ax=ax, scatter=False, line_kws={'color': color})
+    ax.set_title(f'{col} vs body_mass_g', fontsize=12, fontweight='bold')
+
+# Hide empty axes if fewer than 4 numeric columns
+for j in range(i+1, len(axes)):
+    axes[j].axis('off')
+
+plt.tight_layout()
+plt.show()
+
 ################################################## Box plot to detect outliers in num cols #########################################################
 # Select numeric columns
 num_cols = df.select_dtypes(include=np.number).columns.tolist()
