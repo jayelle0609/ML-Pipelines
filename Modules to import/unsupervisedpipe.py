@@ -222,15 +222,20 @@ for x_col, y_col in combinations(numeric_cols, 2):
 # -------------------------------
 # Visualise : PCA (2D) plot of clusters
 # -------------------------------
-
+ohe = OneHotEncoder(handle_unknown = 'ignore', sparse_output = False)
+scaler = StandardScaler()
+df_encoded = df.copy()
+df_encoded = ohe.fit_transform(df_encoded[['Address_gu']] )
+df_scaled_encoded = scaler.fit_transform(df_encoded)
 from sklearn.decomposition import PCA
 pca = PCA(n_components=2)
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(df.drop(columns=['cluster']))
+
+
+X_scaled = scaler.fit_transform(df_scaled_encoded)
 df_pca = pca.fit_transform(X_scaled)
 
 plt.figure(figsize=(12, 8))
-plt.scatter(df_pca[:, 0], df_pca[:, 1], c=train['cluster'], cmap='viridis', alpha=0.6)
+plt.scatter(df_pca[:, 0], df_pca[:, 1], c=df['cluster'], cmap='viridis', alpha=0.6)
 plt.colorbar(label='Cluster')
 plt.title('PCA Visualization of Clusters')
 plt.xlabel('PCA Component 1')
