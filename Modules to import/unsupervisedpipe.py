@@ -225,7 +225,9 @@ for x_col, y_col in combinations(numeric_cols, 2):
 
 from sklearn.decomposition import PCA
 pca = PCA(n_components=2)
-df_pca = pca.fit_transform(df.drop(columns=['cluster']))
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df.drop(columns=['cluster']))
+df_pca = pca.fit_transform(X_scaled)
 
 plt.figure(figsize=(12, 8))
 plt.scatter(df_pca[:, 0], df_pca[:, 1], c=train['cluster'], cmap='viridis', alpha=0.6)
@@ -242,7 +244,7 @@ plt.show()
 from mpl_toolkits.mplot3d import Axes3D  # needed for 3D plotting
 
 pca = PCA(n_components=3)
-df_pca = pca.fit_transform(df.drop(columns=['cluster']))
+df_pca = pca.fit_transform(X_scaled))
 
 fig = plt.figure(figsize=(12,8))
 ax = fig.add_subplot(111, projection='3d')
