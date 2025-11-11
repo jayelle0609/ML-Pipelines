@@ -442,18 +442,6 @@ for name, model in models.items():
     else:
         roc_auc = np.nan
 
-    cv_results.append({
-        'Model': name,
-        'Accuracy Mean': np.mean(acc_scores),
-        'F1 Mean': np.mean(f1_scores),
-        'Acc Std': np.std(acc_scores),
-        'F1 Std': np.std(f1_scores),
-        'ROC-AUC': np.mean(roc_auc)
-    })
-
-cv_df = pd.DataFrame(cv_results).sort_values(by='F1 Mean', ascending=False)
-print(cv_df)
-
     # Store results
     cv_results.append({
         'Model': name,
