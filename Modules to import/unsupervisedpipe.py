@@ -149,7 +149,7 @@ axes[1,1].set_title('Davies-Bouldin Analysis for optimal k cluster')
 # -------------------------------
 
 optimal_k = 5
-kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10, n_jobs=-1, verbose=1, max_iter=300)
+kmeans = KMeans(n_clusters=optimal_k, random_state=42, n_init=10, verbose=1, max_iter=300)
 cluster_labels = kmeans.fit_predict(df_processed)
 
 labels = kmeans.fit_predict(df_processed)
@@ -163,6 +163,7 @@ df
 # Visualize clusters distribution (balanced?)
 # -------------------------------
 # Bar plot
+plt.rcParams.update({'font.size': 12}) 
 plt.figure(figsize=(3,3))
 df['cluster'].value_counts().sort_index().plot(kind='bar', title='Cluster Counts')
 
@@ -182,7 +183,8 @@ df['Sex'] = df['Sex'].map({'male': 1, 'female': 0})
 df
 
 # Heatmap of feature means per cluster
-cluster_means = df.groupby('cluster').mean()
+numeric_cols = df.select_dtypes(include=np.number).columns
+cluster_means = df.groupby('cluster')[numeric_cols].mean()
 plt.figure(figsize=(10, 6))
 
 # set font size
@@ -191,6 +193,8 @@ sns.heatmap(cluster_means, annot=True, fmt=".2f", cmap='coolwarm')
 plt.title('Feature Means per Cluster')
 plt.xlabel('Features')
 
+# feauture correlation heat map : -1 to 1
+# cluster feature heatmap : shows mean value of each feature in each cluster
 # feauture correlation heat map : -1 to 1
 # cluster feature heatmap : shows mean value of each feature in each cluster
 
