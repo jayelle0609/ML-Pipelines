@@ -9,7 +9,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import train_test_split, cross_val_score, KFold, RandomizedSearchCV, cross_val_predict
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, RandomizedSearchCV, cross_val_predict
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix, roc_auc_score, roc_curve, auc
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -126,7 +126,7 @@ y_sample = y_train.loc[X_sample.index]
 # -------------------------------
 # X_val and y_val are kept aside for final validation after hyperparameter tuning
 
-kf = KFold(n_splits=3, shuffle=True, random_state=42)
+skf = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
 cv_results = []
 
 for name, model in models.items():
@@ -135,15 +135,15 @@ for name, model in models.items():
         ('classifier', model)
     ])
 #
-    acc_scores = cross_val_score(pipeline, X_train, y_train, cv=kf, scoring='accuracy')
-    f1_scores = cross_val_score(pipeline, X_train, y_train, cv=kf, scoring='f1') # 'f1_weighted' for imbalanced datasets
+    acc_scores = cross_val_score(pipeline, X_train, y_train, cv=skf, scoring='accuracy')
+    f1_scores = cross_val_score(pipeline, X_train, y_train, cv=skf, scoring='f1') # 'f1_weighted' for imbalanced datasets
 
     #acc_scores = cross_val_score(pipeline, X_sample, y_sample, cv=kf, scoring='accuracy')
     #f1_scores = cross_val_score(pipeline, X_sample, y_sample, cv=kf, scoring='f1')   
 
     # Optional: ROC-AUC (only for models with predict_proba)
     if hasattr(model, "predict_proba"):   # <-- should check model, not pipeline.named_steps
-        y_proba_cv = cross_val_predict(pipeline, X_train, y_train, cv=kf, method='predict_proba')
+        y_proba_cv = cross_val_predict(pipeline, X_train, y_train, cv=skf, method='predict_proba')
         roc_auc = roc_auc_score(y_train, y_proba_cv[:, 1])
         print(f"{name} Cross-validated ROC-AUC: {roc_auc:.3f}")
     else:
