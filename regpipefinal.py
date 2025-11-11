@@ -667,15 +667,9 @@ except Exception as e:
 # ---------------------------
 # Full Pipeline: Baseline vs Optuna for Random Forest
 # ---------------------------
-# ---------------------------
-# Full Pipeline: Baseline vs Optuna (Version-Safe RMSE)
-# ---------------------------
-
-# 1️⃣ Imports
-import optuna
-# !pip install optuna
-from sklearn.metrics import r2_score, mean_squared_error
-
+# 2️⃣ Load dataset
+X = data.data
+y = data.target
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
 # 3️⃣ Baseline Random Forest
@@ -707,7 +701,7 @@ def objective(trial):
 
 # 5️⃣ Run Optuna study
 study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=50)
+study.optimize(objective, n_trials=10)
 
 # 6️⃣ Fit best Optuna model
 best_params = study.best_params
@@ -723,22 +717,39 @@ print(f"Optuna RF: R² = {r2_optuna:.3f}, RMSE = {rmse_optuna:.3f}")
 models = ['Baseline', 'Optuna']
 r2_scores = [r2_default, r2_optuna]
 rmse_scores = [rmse_default, rmse_optuna]
-
 fig, ax = plt.subplots(1, 2, figsize=(12, 5))
 
 # R² comparison
-ax[0].bar(models, r2_scores, color=['skyblue', 'salmon'])
+bars1 = ax[0].bar(models, r2_scores, color=['skyblue', 'salmon'])
 ax[0].set_title("R² Comparison")
 ax[0].set_ylim(0, 1)
 ax[0].set_ylabel("R²")
 
+# Label each R² value
+for bar in bars1:
+    height = bar.get_height()
+    ax[0].text(bar.get_x() + bar.get_width()/2, height + 0.02, f"{height:.3f}", ha='center', va='bottom')
+
 # RMSE comparison
-ax[1].bar(models, rmse_scores, color=['skyblue', 'salmon'])
+bars2 = ax[1].bar(models, rmse_scores, color=['skyblue', 'salmon'])
 ax[1].set_title("RMSE Comparison")
 ax[1].set_ylabel("RMSE")
 
+# Label each RMSE value
+for bar in bars2:
+    height = bar.get_height()
+    ax[1].text(bar.get_x() + bar.get_width()/2, height + 0.02, f"{height:.3f}", ha='center', va='bottom')
+
 plt.suptitle("Baseline vs Optuna Hyperparameter Tuning")
 plt.show()
+
+# print best params
+print("Best trial and parameters found by Optuna:")
+trial = study.best_trial
+print("  Value (R²):", trial.value)
+print("  Params:")
+for key, value in trial.params.items():
+    print(f"    {key}: {value}")
 
 # 8️⃣ Optional: Optuna optimization history
 try:
