@@ -623,3 +623,107 @@ def plot_regression_results(y_val, y_pred_val):
 
     plt.tight_layout()
     plt.show()
+
+###################### Viewing coefficients of linear model ##############################################
+best_model = pipeline.named_steps['model']
+coef_df = pd.DataFrame({
+    'Feature': X_train.columns,
+    'Coefficient': lasso_model.coef_
+})
+coef_df
+
+###################### Plotting coefficients of linear model and viewing with intensity on bar ##############################################
+
+
+# 1️⃣ Absolute value for color intensity
+coef_df['AbsCoeff'] = coef_df['Coefficient'].abs()
+
+# 2️⃣ Sort by absolute coefficient magnitude (most impactful first)
+coef_df = coef_df.sort_values(by='AbsCoeff', ascending=False)
+
+# 3️⃣ Normalize for color mapping
+norm = plt.Normalize(coef_df['Coefficient'].min(), coef_df['Coefficient'].max())
+colors = plt.cm.coolwarm(norm(coef_df['Coefficient'].values))
+
+# 4️⃣ Plot
+plt.figure(figsize=(10, 6))
+bars = plt.barh(coef_df['Feature'], coef_df['Coefficient'], color=colors, edgecolor='black')
+
+# 5️⃣ Annotate each bar with its coefficient value
+for bar in bars:
+    plt.text(
+        bar.get_width(),                           # x-position (end of bar)
+        bar.get_y() + bar.get_height() / 2,        # y-position (center of bar)
+        f"{bar.get_width():.3f}",                  # formatted value
+        ha='left' if bar.get_width() > 0 else 'right',
+        va='center',
+        fontsize=9,
+        color='black',
+        fontweight='bold'
+    )
+
+# 6️⃣ Styling
+plt.title("Feature Coefficients (Lasso Regression)", fontsize=14, fontweight='bold')
+plt.xlabel("Coefficient Value", fontsize=12)
+plt.ylabel("Feature", fontsize=12)
+plt.grid(axis='x', linestyle='--', alpha=0.6)
+
+# Rotate labels (use horizontal plot for long names)
+plt.yticks(fontsize=10)
+plt.xticks(rotation=45, ha='right', fontsize=10)
+
+plt.tight_layout()
+plt.show()
+
+############################## Feature importances of tree models and viewing intensity on bar with annotation on bar##################################################
+
+# Example assumes you’ve already trained your model
+# (works for RandomForest, XGB, LGBM, CatBoost, etc.)
+best_model = RandomForestRegressor(random_state=42)
+pipeline.fit(X_train, y_train)
+
+# Get feature importances
+importances = best_model.feature_importances_
+feature_names = X_train.columns
+
+# Put into dataframe
+importances_df = pd.DataFrame({
+    'Feature': feature_names,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+# Normalize importance for color intensity mapping (0–1)
+importances_df['NormImportance'] = importances_df['Importance'] / importances_df['Importance'].max()
+
+# Choose a colormap — viridis is nice and perceptually uniform
+colors = sns.color_palette("viridis", as_cmap=True)(importances_df['NormImportance'])
+
+# Plot
+plt.figure(figsize=(10, 6))
+bars = plt.bar(
+    importances_df['Feature'],
+    importances_df['Importance'],
+    color=colors,
+    edgecolor='black'
+)
+
+# Annotate values on bars (optional)
+for bar in bars:
+    plt.text(
+        bar.get_x() + bar.get_width()/2,
+        bar.get_height(),
+        f"{bar.get_height():.3f}",
+        ha='center', va='bottom', fontsize=9
+    )
+
+# Rotate labels and improve layout
+plt.xticks(rotation=45, ha='right', fontsize=10)
+plt.yticks(fontsize=10)
+plt.title('Feature Importance (Colored by Intensity)', fontsize=14, fontweight='bold')
+plt.xlabel('Feature', fontsize=12)
+plt.ylabel('Importance', fontsize=12)
+plt.grid(axis='y', linestyle='--', alpha=0.6)
+plt.tight_layout()
+
+plt.show()
+
