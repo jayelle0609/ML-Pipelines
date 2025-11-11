@@ -286,8 +286,12 @@ plt.legend()
 plt.show()
 #############################################################################
 # Viz 4 - PCA outliers + labels of anomaly score 
+# scale first before fitting into PCA as PCA is affected by scale 
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df[numeric_cols])
 pca = PCA(n_components=2)
-pca_result = pca.fit_transform(df[numeric_cols])
+pca_result = pca.fit_transform(X_scaled)
+
 # Store the first 2 principal components
 df['PC1'] = pca_result[:, 0]
 df['PC2'] = pca_result[:, 1]
@@ -320,13 +324,14 @@ plt.show()
 # Viz 5 - 3D view of outliers
 # Run 3D PCA
 pca = PCA(n_components=3)
-pca_result = pca.fit_transform(df[numeric_cols])
+pca_result = pca.fit_transform(X_scaled)
 df['PC1'] = pca_result[:, 0]
 df['PC2'] = pca_result[:, 1]
 df['PC3'] = pca_result[:, 2]
 # 3D scatter plot
 fig = px.scatter_3d(df, x='PC1', y='PC2', z='PC3',color='is_outlier', color_discrete_map={False: 'blue', True: 'red'},hover_data=df.columns,  # shows anomaly score + others cols info on hover
     title='Isolation Forest Outliers in 3D PCA space')
+fig.update_layout(width=700, height=600)
 fig.show()
 
 # -------------------------------------
