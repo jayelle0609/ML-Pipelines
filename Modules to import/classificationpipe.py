@@ -7,66 +7,333 @@ import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, RandomizedSearchCV, cross_val_predict
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix, roc_auc_score, roc_curve, auc
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
 # -------------------------------
 # Classification Models
 # -------------------------------
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier,  IsolationForest 
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
-# -------------------------------
-# Custom Transformer: Outlier Remover (optional)
-# -------------------------------
-class OutlierRemover(BaseEstimator, TransformerMixin):
-    def __init__(self, method='zscore', threshold=3):
-        self.method = method
-        self.threshold = threshold
-        
-    def fit(self, X, y=None):
-        return self
-    
-    def transform(self, X):
-        X = X.copy()
-        if self.method == 'zscore':
-            from scipy.stats import zscore
-            z_scores = np.abs(zscore(X))
-            return X[(z_scores < self.threshold).all(axis=1)]
-        elif self.method == 'iqr': # removes outliers beyond 1.5*IQR
-            Q1 = X.quantile(0.25)
-            Q3 = X.quantile(0.75)
-            IQR = Q3 - Q1
-            return X[~((X < (Q1 - 1.5 * IQR)) | (X > (Q3 + 1.5 * IQR))).any(axis=1)]
-        else:
-            return X
 
-# -------------------------------
-# Example Dataset
-# -------------------------------
-df = pd.DataFrame({
-    'age': [25, 32, 47, 51, 62],
-    'income': [50000, 60000, 55000, 75000, 90000],
-    'gender': ['M','F','F','M','F'],
-    'region': ['North','South','East','West','North'],
-    'education': ['high','medium','low','medium','high']
-})
-y = pd.Series([1, 0, 0, 1, 1])  # classification labels
-
-# -------------------------------
-# Column Selection
-# -------------------------------
-numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+### if got na before eda ###
+df.info()
+df.isnull().sum()
+num_cols = df.select_dtypes(include = np.number)
+num_cols.fillna(num_cols.mean(), inplace=True)
+cat_cols = df.select_dtypes(exclude = np.number)
+cat_cols.fillna(cat_cols.mode().iloc[0], inplace=True)
+# combine 
+df = pd.concat([num_cols, cat_cols], axis=1)
+df.info()
+############################################################################# EDA Categorical Distributions, Countplot #####################################################################################
 categorical_cols = df.select_dtypes(exclude=np.number).columns.tolist()
+
+# Define grid size (2x2)
+n_rows, n_cols = 2, 2
+
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 8))
+axes = axes.flatten()
+
+for i, col in enumerate(categorical_cols[:n_rows * n_cols]):  # plot up to 4 categorical vars
+    # Sort categories by frequency (high to low)
+    order = df[col].value_counts().index
+
+    ax = sns.countplot(x=col, data=df, order=order, ax=axes[i], palette="magma")
+
+    axes[i].set_title(f"Distribution of {col}", fontsize=14, fontweight='bold')
+    axes[i].tick_params(axis='x', rotation=45)
+
+    # Add value labels above each bar
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(f'{int(height)}', 
+                    (p.get_x() + p.get_width() / 2., height), 
+                    ha='center', va='bottom', fontsize=10, color='black', xytext=(0, 5),
+                    textcoords='offset points')
+
+# Remove unused axes if fewer than 4 categorical vars
+for j in range(i + 1, len(axes)):
+    fig.delaxes(axes[j])
+
+# Global title and layout
+fig.suptitle("Categorical Feature Distributions", fontsize=16, fontweight='bold')
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+plt.show()
+############################################################################# EDA Categorical Distributions, Countplot #####################################################################################
+
+################################################### EDA Continuous Numeric Distributions, histplot(kde = True, hue ='sub_cat') #####################################################################################
+# Select numeric columns
+numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+
+# Define grid
+n_rows, n_cols = 2, 2
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 8))
+axes = axes.flatten()
+
+for i, col in enumerate(numeric_cols[:n_rows * n_cols]):  # limit to 4 for 2x2 grid
+    sns.histplot(data = df, x=col, kde=True, bins=20, hue = 'time', ax=axes[i], color='teal')
+    axes[i].set_title(f"Distribution of {col}", fontsize=13, fontweight='bold')
+    axes[i].set_xlabel(col)
+    axes[i].set_ylabel('Frequency')
+
+for j in range(i + 1, len(axes)):
+    fig.delaxes(axes[j])
+
+fig.suptitle("Continuous Feature Distributions (Histogram + KDE)", fontsize=16, fontweight='bold')
+plt.tight_layout(rect=[0, 0, 1, 0.95])
+plt.show()
+
+################################################### EDA Continuous Numeric Distributions, histplot(kde = True) #######################################################################################
+
+################################################### EDA Target Variable Category Pie Distributions, plt.pie() #######################################################################################
+# Choose your target column
+target_col = 'sex'   # replace this with your own target column name
+
+# Count category frequencies
+counts = df[target_col].value_counts()
+labels = counts.index
+sizes = counts.values
+
+# Define colors (optional)
+colors = sns.color_palette('pastel')[0:len(labels)]
+
+# Plot pie chart
+plt.figure(figsize=(6, 6))
+plt.pie(
+    sizes,
+    labels=labels,
+    autopct='%1.1f%%',      # show percentages with 1 decimal place
+    startangle=90,          # rotate so largest slice starts at the top
+    colors=colors, textprops={'fontsize': 20, 'color': 'black'},
+    wedgeprops={'edgecolor': 'white'}  # cleaner edges
+)
+plt.title(f"Distribution of {target_col}", fontsize=16, fontweight='bold')
+plt.tight_layout()
+plt.show()
+################################################### EDA Target Variable Category Pie Distributions, plt.pie() #######################################################################################
+################################################### EDA Corr Heatmap #######################################################################################
+
+# map categorical variables to int
+df['sex'] = df['sex'].map({'Male': 0, 'Female': 1}).astype(int)
+df['time'] = df['time'].map({'Lunch': 0, 'Dinner': 1}).astype(int)
+df['smoker'] =df['smoker'].map({'No': 0, 'Yes': 1}).astype(int)
+
+# corr plot
+corr = df.corr(numeric_only=True)
+mask = np.triu(np.ones_like(corr, dtype=bool))
+plt.figure(figsize=(8, 6))
+sns.heatmap(
+    corr,
+    mask=mask,                
+    cmap='coolwarm',           
+    annot=True,                
+    fmt=".2f",          
+    square=True,               
+    annot_kws={"size": 12} 
+)
+plt.title("Correlation Heatmap (Lower Triangle)", fontsize=16, fontweight='bold')
+plt.tight_layout()
+plt.show()
+
+################################################### EDA Corr Heatmap #######################################################################################
+################################################## Numerical rs with scatter and line plot and 95 ci ##########################################################
+# Select numeric columns
+num_cols = df.select_dtypes(include=np.number).columns.tolist()
+
+# Create 2x2 grid
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+axes = axes.flatten()  # flatten to iterate easily
+
+# Loop through numerical columns
+for i, col in enumerate(num_cols[:4]):  # only first 4 numeric columns to fit 2x2
+    ax = axes[i]
+    # Scatter + regression line
+    sns.regplot(
+        x=col,
+        y='body_mass_g',  # example target for regression
+        data=df,
+        ax=ax,
+        ci=95,            # 95% confidence interval
+        scatter_kws={'alpha':0.6},  # transparency for scatter points
+        line_kws={'color':'red'}
+    )
+    ax.set_title(f'{col} vs body_mass_g', fontsize=12, fontweight='bold')
+
+# Hide empty axes if fewer than 4 numeric cols
+for j in range(i+1, len(axes)):
+    axes[j].axis('off')
+
+plt.tight_layout()
+plt.show()
+################################################## Numerical rs with scatter and line plot and 95 ci #########################################################
+
+################################################## Box plot to detect outliers in num cols #########################################################
+# Select numeric columns
+num_cols = df.select_dtypes(include=np.number).columns.tolist()
+
+# Determine layout (2x2 grid here as example)
+n_cols = 2
+n_rows = int(np.ceil(len(num_cols)/n_cols))
+
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, n_rows*4))
+axes = axes.flatten()  # flatten for easy iteration
+
+# Loop through numeric columns
+for i, col in enumerate(num_cols):
+    ax = axes[i]
+    sns.boxplot(x=df[col], ax=ax, color='skyblue')
+    ax.set_title(f'Boxplot of {col}', fontsize=12, fontweight='bold')
+
+# Hide empty axes if any
+for j in range(i+1, len(axes)):
+    axes[j].axis('off')
+
+plt.tight_layout()
+plt.show()
+
+numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
+categorical_cols = df.select_dtypes(include='object').columns.tolist()
+ordinal_cols = []
+ordered_categories = []
+################################################## Box plot to detect outliers in num cols #########################################################
+
+
+# Usually remove outliers for numerical data only. Cat data - no rly such thing as outliers 
+# -------------------------------
+# Outlier Removal with Isolation Forest (VIZ PART)
+# -------------------------------
+# We drop 'tip' as we don’t want to remove outliers based on the target, only on features
+numeric_cols = df.select_dtypes(include=np.number).columns.drop('target', errors='ignore')
+iso = IsolationForest(contamination=0.05, random_state=42)
+iso.fit(df[numeric_cols])
+mask = iso.predict(df[numeric_cols]) != -1
+df['is_outlier'] = ~mask  # True = outlier, False = inlier
+####################################################### VIZ 0 : out lier bar plots with no annotate############################################
+df['is_outlier'].value_counts().plot(kind='bar') 
+ ############################################ VIZ 0 : out lier bar plots with annotate############################################
+ax = df['is_outlier'].value_counts().rename({True : "Outlier", False : "Not Outliers"}).plot(kind='bar', color=['blue', 'orange'])
+# Annotate values directly on the bars
+for i, v in enumerate(df['is_outlier'].value_counts()):
+    ax.text(i, v + 1, str(v), ha='center', fontsize=12, color='black')
+    ax.tick_params(axis = 'x', rotation = 45)
+# Display the plot
+plt.title('Outlier Distribution')
+plt.xlabel('Outlier (True/False)')
+plt.ylabel('Count')
+plt.show()
+#################################################################################################
+# Viz 1 - outlier
+plt.figure(figsize=(8,6))
+plt.scatter(df[numeric_cols[0]], df[numeric_cols[1]],
+            c=df['is_outlier'], cmap='coolwarm', edgecolor='k')
+plt.xlabel(numeric_cols[0])
+plt.ylabel(numeric_cols[1])
+plt.title('Outliers detected by Isolation Forest')
+plt.show()
+#############################################################################
+## Viz 2 - outlier 
+sns.pairplot(df, vars=numeric_cols, hue='is_outlier', palette={False:'blue', True:'red'}, corner = True) # masks repeating graphs
+#############################################################################
+# Viz 3 - outlier
+df['anomaly_score'] = iso.decision_function(df[numeric_cols]) # shows u outlier anomaly score, higher = worser anomaly
+plt.figure(figsize=(8,4))
+plt.hist(df['anomaly_score'], bins=30, color='skyblue', edgecolor='k')
+plt.axvline(x=0, color='red', linestyle='--', label='Threshold')
+plt.xlabel('Anomaly Score')
+plt.ylabel('Frequency')
+plt.title('Distribution of Isolation Forest Scores')
+plt.legend()
+plt.show()
+#############################################################################
+# Viz 4 - PCA outliers + labels of anomaly score 
+pca = PCA(n_components=2)
+pca_result = pca.fit_transform(df[numeric_cols])
+# Store the first 2 principal components
+df['PC1'] = pca_result[:, 0]
+df['PC2'] = pca_result[:, 1]
+# Create the figure and axis
+fig, ax = plt.subplots(figsize=(8, 6))
+# Plotting
+scatter = ax.scatter(df['PC1'], df['PC2'], c=df['is_outlier'], cmap='coolwarm', edgecolor='k')
+ax.set_xlabel('PC1')
+ax.set_ylabel('PC2')
+ax.set_title('Isolation Forest Outliers in PCA Space')
+# Label outliers with their anomaly scores
+outliers = df[df['is_outlier']]  # Filtering the outliers
+for _, row in outliers.iterrows():
+    ax.text(
+        row['PC1'], row['PC2']+0.2, f"{row['anomaly_score']:.2f}", fontsize=10, color='red', ha='center', va='center'
+    )
+# Add color legend for outliers
+ax.legend(*scatter.legend_elements(), title="Outliers")
+# Adding annotation text below the plot (on the canvas, not on the axes)
+annotation_text = (
+    "Low anomaly scores (closer to -1) indicate outliers or anomalies.\n"
+    "High anomaly scores (closer to 1) indicate inliers or normal points"
+)
+# Add the annotation text **below the entire plot**
+fig.text(0.5, -0.04, annotation_text, ha='center', fontsize=10, color='black', va='center', wrap=True)
+# Show the plot
+plt.tight_layout()  # Ensures everything fits nicely
+plt.show()
+#############################################################################
+# Viz 5 - 3D view of outliers
+# Run 3D PCA
+pca = PCA(n_components=3)
+pca_result = pca.fit_transform(df[numeric_cols])
+df['PC1'] = pca_result[:, 0]
+df['PC2'] = pca_result[:, 1]
+df['PC3'] = pca_result[:, 2]
+# 3D scatter plot
+fig = px.scatter_3d(df, x='PC1', y='PC2', z='PC3',color='is_outlier', color_discrete_map={False: 'blue', True: 'red'},hover_data=df.columns,  # shows anomaly score + others cols info on hover
+    title='Isolation Forest Outliers in 3D PCA space')
+fig.show()
+
+# -------------------------------------
+# Outlier Removal now! (REMOVAL PART)
+# -------------------------------------
+# PRINTED EARLIER
+# numeric_cols = df.select_dtypes(include=np.number).columns.drop('target', errors='ignore')
+# iso = IsolationForest(contamination=0.05, random_state=42)
+# iso.fit(df[numeric_cols])
+# mask = iso.predict(df[numeric_cols]) != -1
+# df['is_outlier'] = ~mask  # True = outlier, False = inlier
+df = df[mask].reset_index(drop=True)
+##########################################################################
+df = df.drop(columns= ['is_outlier', 'anomaly_score', 'PC1', 'PC2', 'PC3'])
+X = df.drop(columns='y') # drop target col
+y = df['target']
+le = LabelEncoder()
+y = le.fit_transform(df['y'])
+# Check the mapping
+mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+print("Label mapping:", mapping)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# -------------------------------
+# Select numeric and categorical columns
+# -------------------------------
+# Note not to feed y into pipeline. 
+# y should not be scaled 
+numeric_cols = X.select_dtypes(include=np.number).columns.tolist() # or X
+categorical_cols = X.select_dtypes(exclude=np.number).columns.tolist() # or X
+ 
 ordinal_cols = ['education']
 education_order = ['low', 'medium', 'high']
+
 categorical_cols = [c for c in categorical_cols if c not in ordinal_cols]
 
 # -------------------------------
@@ -74,7 +341,6 @@ categorical_cols = [c for c in categorical_cols if c not in ordinal_cols]
 # -------------------------------
 numeric_pipeline = Pipeline([
     ('imputer', SimpleImputer(strategy='mean')),
-    ('outlier', OutlierRemover(method='zscore', threshold=3)),
     ('scaler', StandardScaler())
 ])
 
@@ -136,18 +402,36 @@ for name, model in models.items():
     ])
 #
     acc_scores = cross_val_score(pipeline, X_train, y_train, cv=skf, scoring='accuracy')
-    f1_scores = cross_val_score(pipeline, X_train, y_train, cv=skf, scoring='f1') # 'f1_weighted' for imbalanced datasets
+    f1_scores = cross_val_score(pipeline, X_train, y_train, cv=skf, scoring='f1_weighted') # 'f1_weighted' for imbalanced datasets
 
     #acc_scores = cross_val_score(pipeline, X_sample, y_sample, cv=kf, scoring='accuracy')
     #f1_scores = cross_val_score(pipeline, X_sample, y_sample, cv=kf, scoring='f1')   
 
     # Optional: ROC-AUC (only for models with predict_proba)
-    if hasattr(model, "predict_proba"):   # <-- should check model, not pipeline.named_steps
+    if hasattr(model, "predict_proba"):  # <-- check the model
         y_proba_cv = cross_val_predict(pipeline, X_train, y_train, cv=skf, method='predict_proba')
-        roc_auc = roc_auc_score(y_train, y_proba_cv[:, 1])
+        n_classes = len(np.unique(y_train))
+
+        if n_classes == 2:  # Binary classification
+            roc_auc = roc_auc_score(y_train, y_proba_cv[:, 1])
+        else:  # Multiclass classification
+            roc_auc = roc_auc_score(y_train, y_proba_cv, multi_class='ovr', average='weighted')
+
         print(f"{name} Cross-validated ROC-AUC: {roc_auc:.3f}")
     else:
         roc_auc = np.nan
+
+    cv_results.append({
+        'Model': name,
+        'Accuracy Mean': np.mean(acc_scores),
+        'F1 Mean': np.mean(f1_scores),
+        'Acc Std': np.std(acc_scores),
+        'F1 Std': np.std(f1_scores),
+        'ROC-AUC': np.mean(roc_auc)
+    })
+
+cv_df = pd.DataFrame(cv_results).sort_values(by='F1 Mean', ascending=False)
+print(cv_df)
 
     # Store results
     cv_results.append({
@@ -257,7 +541,7 @@ print("✅ Test predictions saved to 'test_predictions.csv'")
 # -------------------------------
 # Example: adjust depending on your model
 # ---------------------------------------
-
+best_model = ...
 ### Logistic Regression ###
 param_dist_lr = {
     'model__C': np.logspace(-3, 2, 6),
@@ -375,7 +659,7 @@ except Exception as e:
 
 
 # -------------------------------
-# Visualization Function
+# Visualization Function (binary class)
 # -------------------------------
 def plot_classification_results_val(y_val, y_pred_val, y_pred_val_proba=None):
     plt.figure(figsize=(14, 5))
@@ -416,3 +700,44 @@ def plot_classification_results_val(y_val, y_pred_val, y_pred_val_proba=None):
 # Plot Validation Results
 # -------------------------------
 plot_classification_results_val(y_val, y_pred_val, y_pred_val_proba)
+
+
+# -------------------------------
+# Visualization Function (multi-class)
+# -------------------------------
+def plot_classification_results_val_multi(y_val, y_pred_val, y_pred_val_proba=None):
+    plt.figure(figsize=(14, 5))  # slightly narrower for 2 plots
+
+    # 1️⃣ Confusion Matrix
+    plt.subplot(1, 2, 1)
+    cm = confusion_matrix(y_val, y_pred_val, labels=np.unique(y_val))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=np.unique(y_val), yticklabels=np.unique(y_val))
+    plt.title("Confusion Matrix")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+
+    # 2️⃣ Predicted Class Distribution
+    plt.subplot(1, 2, 2)
+    ax = sns.countplot(x=y_pred_val, palette='pastel', order=np.unique(y_val))
+    plt.title("Predicted Class Distribution")
+    plt.xlabel("Predicted Class")
+    plt.ylabel("Count")
+
+    # Add counts on top of bars
+    for p in ax.patches:
+        height = p.get_height()
+        ax.annotate(f'{height}', 
+                    xy=(p.get_x() + p.get_width() / 2, height), 
+                    xytext=(0, 5),  # 5 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+
+    plt.tight_layout()
+    plt.show()
+
+# Call the function
+plot_classification_results_val_multi(y_val, y_pred_val, y_pred_val_proba)
+
+
+
