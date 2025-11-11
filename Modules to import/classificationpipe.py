@@ -167,6 +167,53 @@ best_model = models[best_model_name]
 print(f"\nBest model selected: {best_model_name}")
 
 # -------------------------------
+# Plotting best model metrics vs other models 
+# -------------------------------
+metrics = ['F1 Mean', 'Accuracy Mean', 'ROC-AUC','F1 Std', 'Acc Std']
+cv_df_sorted = cv_df.sort_values(by='F1 Mean', ascending=False)
+models_list = cv_df_sorted['Model'].tolist()
+
+fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+axes = axes.flatten()
+
+for i, metric in enumerate(metrics):
+    ax = axes[i]
+    sns.barplot(
+        x='Model', 
+        y=metric, 
+        data=cv_df_sorted, 
+        ax=ax, 
+        palette='magma'
+    )
+    ax.set_title(metric, fontsize=12, fontweight='bold')
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_xticklabels(models_list, rotation=45, ha='right')
+    
+    # Annotate bars
+    for p in ax.patches:
+        ax.annotate(f"{p.get_height():.3f}", 
+                    (p.get_x() + p.get_width() / 2., p.get_height()), 
+                    ha='center', va='bottom', fontsize=11)
+
+# Use the last subplot for custom text
+if len(metrics) < len(axes):
+    ax_text = axes[-1]
+    ax_text.axis('off')  # turn off axes
+    summary_text = (
+        "Insights:\n"
+        "• Higher F1 Mean, Accuracy, and ROC-AUC = better model performance.\n"
+        "• Lower F1 Std and Accuracy Std = more stable and consistent model predictions.\n"
+        "• Best Model : ______ \n"
+    )
+    ax_text.text(0.5, 0.5, summary_text,
+                 ha='center', va='center', fontsize=12, fontweight='bold', wrap=True)
+
+plt.suptitle("Model Comparison Across Metrics", fontsize=16, fontweight='bold')
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+plt.show()
+
+# -------------------------------
 # Select best model
 # -------------------------------
 best_model = XGBClassifier(
@@ -274,7 +321,7 @@ random_search = RandomizedSearchCV(
     estimator=pipeline,
     param_distributions=param_dist,
     n_iter=30,
-    scoring='accuracy', # 'f1_weighted' for imbalanced datasets
+    scoring='f1_weighted', # 'f1_weighted' for imbalanced datasets
     cv=3,
     n_jobs=-1,
     random_state=42,
@@ -288,7 +335,7 @@ random_search.fit(X_train, y_train)
 print("✅ Hyperparameter tuning completed.")
 print("Best Parameters:", random_search.best_params_)
 print("Best Estimator:", random_search.best_estimator_) # prints full pipeline with best params
-print("Best CV Accuracy :", random_search.best_score_) 
+print("Best CV F1 Weighted Score :", random_search.best_score_) 
 
 # Validation
 y_pred_val = random_search.predict(X_val)
