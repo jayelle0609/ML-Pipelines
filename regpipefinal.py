@@ -661,80 +661,99 @@ except Exception as e:
     print(f"An error occurred: {e}")
 
 
-############## to check if default model or gridsearch best parms is better##########################################################
-############## to check if default model or gridsearch best parms is better##########################################################
+############## to check if default model or optuna best parms is better##########################################################
+############## to check if default model or optuna best parms is better##########################################################
+! pip install optuna
+# ---------------------------
+# Full Pipeline: Baseline vs Optuna for Random Forest
+# ---------------------------
+
+# 1️⃣ Imports
+import optuna
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_boston
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score, mean_squared_error
+
+# 2️⃣ Load dataset
+X, y = load_boston(return_X_y=True)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# -------------------------
-# 2️⃣ Default Random Forest
-# -------------------------
+# 3️⃣ Baseline model
 rf_default = RandomForestRegressor(random_state=42)
 rf_default.fit(X_train, y_train)
 y_pred_default = rf_default.predict(X_test)
 
 r2_default = r2_score(y_test, y_pred_default)
 rmse_default = mean_squared_error(y_test, y_pred_default, squared=False)
-print(f"Default RF: R² = {r2_default:.3f}, RMSE = {rmse_default:.3f}")
+print(f"Baseline RF: R² = {r2_default:.3f}, RMSE = {rmse_default:.3f}")
 
-# -------------------------
-# 3️⃣ GridSearchCV for hyperparameter tuning
-# -------------------------
-param_grid = {
-    'n_estimators': [100, 200],
-    'max_depth': [5, 10, None],
-    'min_samples_split': [2, 5]
-}
+# 4️⃣ Optuna objective function
+def objective(trial):
+    n_estimators = trial.suggest_int('n_estimators', 50, 300)
+    max_depth = trial.suggest_int('max_depth', 3, 20)
+    min_samples_split = trial.suggest_int('min_samples_split', 2, 10)
+    min_samples_leaf = trial.suggest_int('min_samples_leaf', 1, 5)
 
-rf = RandomForestRegressor(random_state=42)
-grid = GridSearchCV(
-    estimator=rf,
-    param_grid=param_grid,
-    cv=5,
-    scoring='r2',
-    n_jobs=-1,
-    refit=True  # ensures best_estimator_ is already fitted
-)
+    model = RandomForestRegressor(
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        min_samples_split=min_samples_split,
+        min_samples_leaf=min_samples_leaf,
+        random_state=42
+    )
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    return r2_score(y_test, y_pred)  # maximize R²
 
-grid.fit(X_train, y_train)
-print("Best params from GridSearchCV:", grid.best_params_)
+# 5️⃣ Create and run Optuna study
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=50)
 
-# -------------------------
-# 4️⃣ Best model predictions
-# -------------------------
-best_rf = grid.best_estimator_  # already fitted due to refit=True
-y_pred_gs = best_rf.predict(X_test)
+# 6️⃣ Fit best Optuna model
+best_params = study.best_params
+rf_optuna = RandomForestRegressor(**best_params, random_state=42)
+rf_optuna.fit(X_train, y_train)
+y_pred_optuna = rf_optuna.predict(X_test)
 
-r2_gs = r2_score(y_test, y_pred_gs)
-rmse_gs = mean_squared_error(y_test, y_pred_gs, squared=False)
-print(f"GridSearch RF: R² = {r2_gs:.3f}, RMSE = {rmse_gs:.3f}")
+r2_optuna = r2_score(y_test, y_pred_optuna)
+rmse_optuna = mean_squared_error(y_test, y_pred_optuna, squared=False)
+print(f"Optuna RF: R² = {r2_optuna:.3f}, RMSE = {rmse_optuna:.3f}")
 
-# -------------------------
-# 5️⃣ Visual comparison
-# -------------------------
-models = ['Default', 'GridSearch']
-r2_scores = [r2_default, r2_gs]
-rmse_scores = [rmse_default, rmse_gs]
-colors = ['skyblue', 'salmon']
+# 7️⃣ Visualize comparison
+models = ['Baseline', 'Optuna']
+r2_scores = [r2_default, r2_optuna]
+rmse_scores = [rmse_default, rmse_optuna]
 
-fig, ax = plt.subplots(1,2, figsize=(12,5))
+fig, ax = plt.subplots(1, 2, figsize=(12, 5))
 
 # R² comparison
-ax[0].bar(models, r2_scores, color=colors)
+ax[0].bar(models, r2_scores, color=['skyblue', 'salmon'])
 ax[0].set_title("R² Comparison")
-ax[0].set_ylim(0,1)
-ax[0].set_ylabel("R² score")
+ax[0].set_ylim(0, 1)
+ax[0].set_ylabel("R²")
 
 # RMSE comparison
-ax[1].bar(models, rmse_scores, color=colors)
+ax[1].bar(models, rmse_scores, color=['skyblue', 'salmon'])
 ax[1].set_title("RMSE Comparison")
 ax[1].set_ylabel("RMSE")
 
-plt.tight_layout()
+plt.suptitle("Baseline vs Optuna Hyperparameter Tuning")
 plt.show()
-############## to check if default model or gridsearch best parms is better##########################################################
-############## to check if default model or gridsearch best parms is better##########################################################
+
+# 8️⃣ Optional: Visualize Optuna optimization history
+try:
+    import optuna.visualization as vis
+    fig_optuna = vis.plot_optimization_history(study)
+    fig_optuna.show()
+except:
+    print("Plotly not installed, skipping Optuna visualization")
+
+############## to check if default model or optuna best parms is better##########################################################
+############## to check if default model or optuna best parms is better##########################################################
 # -------------------------
-# ✅ Done: Default vs GridSearch comparison
+# ✅ Done: Default vs optuna comparison
 # -------------------------
 
 # -------------------------------
