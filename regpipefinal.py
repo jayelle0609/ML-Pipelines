@@ -660,6 +660,83 @@ try:
 except Exception as e:
     print(f"An error occurred: {e}")
 
+
+############## to check if default model or gridsearch best parms is better##########################################################
+############## to check if default model or gridsearch best parms is better##########################################################
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# -------------------------
+# 2️⃣ Default Random Forest
+# -------------------------
+rf_default = RandomForestRegressor(random_state=42)
+rf_default.fit(X_train, y_train)
+y_pred_default = rf_default.predict(X_test)
+
+r2_default = r2_score(y_test, y_pred_default)
+rmse_default = mean_squared_error(y_test, y_pred_default, squared=False)
+print(f"Default RF: R² = {r2_default:.3f}, RMSE = {rmse_default:.3f}")
+
+# -------------------------
+# 3️⃣ GridSearchCV for hyperparameter tuning
+# -------------------------
+param_grid = {
+    'n_estimators': [100, 200],
+    'max_depth': [5, 10, None],
+    'min_samples_split': [2, 5]
+}
+
+rf = RandomForestRegressor(random_state=42)
+grid = GridSearchCV(
+    estimator=rf,
+    param_grid=param_grid,
+    cv=5,
+    scoring='r2',
+    n_jobs=-1,
+    refit=True  # ensures best_estimator_ is already fitted
+)
+
+grid.fit(X_train, y_train)
+print("Best params from GridSearchCV:", grid.best_params_)
+
+# -------------------------
+# 4️⃣ Best model predictions
+# -------------------------
+best_rf = grid.best_estimator_  # already fitted due to refit=True
+y_pred_gs = best_rf.predict(X_test)
+
+r2_gs = r2_score(y_test, y_pred_gs)
+rmse_gs = mean_squared_error(y_test, y_pred_gs, squared=False)
+print(f"GridSearch RF: R² = {r2_gs:.3f}, RMSE = {rmse_gs:.3f}")
+
+# -------------------------
+# 5️⃣ Visual comparison
+# -------------------------
+models = ['Default', 'GridSearch']
+r2_scores = [r2_default, r2_gs]
+rmse_scores = [rmse_default, rmse_gs]
+colors = ['skyblue', 'salmon']
+
+fig, ax = plt.subplots(1,2, figsize=(12,5))
+
+# R² comparison
+ax[0].bar(models, r2_scores, color=colors)
+ax[0].set_title("R² Comparison")
+ax[0].set_ylim(0,1)
+ax[0].set_ylabel("R² score")
+
+# RMSE comparison
+ax[1].bar(models, rmse_scores, color=colors)
+ax[1].set_title("RMSE Comparison")
+ax[1].set_ylabel("RMSE")
+
+plt.tight_layout()
+plt.show()
+############## to check if default model or gridsearch best parms is better##########################################################
+############## to check if default model or gridsearch best parms is better##########################################################
+# -------------------------
+# ✅ Done: Default vs GridSearch comparison
+# -------------------------
+
 # -------------------------------
 # Show plots of pred vs actual
 # -------------------------------
