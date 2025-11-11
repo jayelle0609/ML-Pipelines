@@ -759,6 +759,36 @@ try:
 except:
     print("Plotly not installed, skipping Optuna visualization")
 
+###### Plot learning curve between baseline and best params model (for train and valid set) #############################
+###### Plot learning curve between baseline and best params model (for train and valid set) #############################
+# Function to plot learning curve
+def plot_learning_curve(estimator, X, y, title="Learning Curve", cv=5, scoring='r2'):
+    train_sizes, train_scores, val_scores = learning_curve(
+        estimator, X, y, cv=cv, scoring=scoring, train_sizes=np.linspace(0.1, 1.0, 5), n_jobs=-1
+    )
+    
+    train_mean = np.mean(train_scores, axis=1)
+    train_std = np.std(train_scores, axis=1)
+    val_mean = np.mean(val_scores, axis=1)
+    val_std = np.std(val_scores, axis=1)
+    
+    plt.figure(figsize=(8,6))
+    plt.plot(train_sizes, train_mean, 'o-', color='blue', label="Training score")
+    plt.plot(train_sizes, val_mean, 'o-', color='red', label="Validation score")
+    plt.fill_between(train_sizes, train_mean-train_std, train_mean+train_std, alpha=0.1, color='blue')
+    plt.fill_between(train_sizes, val_mean-val_std, val_mean+val_std, alpha=0.1, color='red')
+    plt.title(title)
+    plt.xlabel("Training examples")
+    plt.ylabel(scoring)
+    plt.legend(loc="best")
+    plt.grid()
+    plt.show()
+
+# Baseline model
+plot_learning_curve(rf_default, X_train, y_train, title="Learning Curve - Baseline RF", scoring='r2')
+
+# Optuna-tuned model
+plot_learning_curve(rf_optuna, X_train, y_train, title="Learning Curve - Optuna RF", scoring='r2')
 
 ############## to check if default model or optuna best parms is better##########################################################
 ############## to check if default model or optuna best parms is better##########################################################
