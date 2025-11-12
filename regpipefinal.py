@@ -36,7 +36,7 @@ cat_cols.fillna(cat_cols.mode().iloc[0], inplace=True)
 # combine 
 df = pd.concat([num_cols, cat_cols], axis=1)
 df.info()
-
+df1.merge(df2, how = "inner", on="colname")
 ############################################################################# EDA Categorical Distributions, Countplot #####################################################################################
 categorical_cols = df.select_dtypes(exclude=np.number).columns.tolist()
 
